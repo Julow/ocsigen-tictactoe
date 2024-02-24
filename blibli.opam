@@ -7,4 +7,5 @@ depends: [
   "eliom" {>= "10.0.0" & < "11.0.0"}
   "ocsipersist-sqlite" {>= "1.0" & < "2.0"}
   "ocsigen-ppx-rpc"
+  "js_of_ocaml-lwt"
 ]

@@ -1,7 +1,7 @@
 (dirs tools client services)
 
-(executables
- (names blibli)
+(executable
+ (name blibli)
  (modes
   (byte plugin)
   (native plugin))

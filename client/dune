@@ -1,5 +1,5 @@
-(executables
- (names blibli)
+(executable
+ (name blibli)
  (modes js byte)
  (preprocess
   (pps js_of_ocaml-ppx lwt_ppx))

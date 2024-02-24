@@ -1,8 +1,9 @@
-open%shared Shared
+open Eliom_content.Html
+open Shared
 
-let%shared view room_name () =
+let run room_name () =
   Lwt.return
-    Eliom_content.Html.F.(
+    F.(
       html
         (head (title (txt ("blibli room " ^ room_name))) html_common_head)
         (body

@@ -1,4 +1,4 @@
-let%shared html_common_head =
+let html_common_head =
   Eliom_content.Html.F.
     [
       css_link

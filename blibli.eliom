@@ -1,12 +1,13 @@
+module%shared _ = Main
+module%shared _ = Game
+module%shared _ = Shared
+
 let%server application_name = "blibli"
 let%client application_name = Eliom_client.get_application_name ()
 
-(* Create a module for the application. See
-   https://ocsigen.org/eliom/manual/clientserver-applications for more
-   information. *)
 module%shared App = Eliom_registration.App (struct
   let application_name = application_name
-  let global_data_path = Some [ "__global_data__" ]
+  let global_data_path = None
 end)
 
 (* As the headers (stylesheets, etc) won't change, we ask Eliom not to
@@ -18,13 +19,11 @@ let%server main_service =
   Eliom_service.create ~path:(Eliom_service.Path [])
     ~meth:(Eliom_service.Get Eliom_parameter.unit) ()
 
-let%client main_service = ~%main_service
-let%shared () = App.register ~service:main_service Main.view
+let%server () = App.register ~service:main_service Main.run
 
 let%server game_service =
   Eliom_service.create ~path:(Eliom_service.Path [])
     ~meth:(Eliom_service.Get Eliom_parameter.(suffix (string "room_name")))
     ()
 
-let%client game_service = ~%game_service
-let%shared () = App.register ~service:game_service Game.view
+let%server () = App.register ~service:game_service Game.run
