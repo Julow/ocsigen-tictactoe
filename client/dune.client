@@ -1,0 +1,8 @@
+(rule (target Makefile.ml) (deps ../Makefile.eliom)
+  (action
+    (with-stdout-to %{target}
+      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../Makefile} --impl Makefile.eliom)))))
+(rule (target blibli.ml) (deps ../blibli.eliom)
+  (action
+    (with-stdout-to %{target}
+      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../blibli} --impl blibli.eliom)))))

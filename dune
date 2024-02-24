@@ -1,0 +1,30 @@
+(dirs tools client assets)
+
+(executables
+ (names blibli)
+ (modes
+  (byte plugin)
+  (native plugin))
+ (libraries eliom.server ocsipersist.sqlite)
+ (preprocess
+  (pps
+   lwt_ppx
+   js_of_ocaml-ppx_deriving_json
+   ocsigen-ppx-rpc
+   --rpc-raw
+   eliom.ppx.server)))
+
+(rule
+ (alias blibli)
+ (deps
+  blibli.cma
+  client/blibli.bc
+  client/blibli.bc.js
+  tools/check_modules.ml)
+ (action
+  (run ocaml tools/check_modules.ml blibli)))
+
+(env
+ (_
+  (flags
+   (:standard -w -9-37-39))))

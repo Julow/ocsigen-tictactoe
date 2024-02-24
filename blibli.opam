@@ -1,0 +1,10 @@
+opam-version: "2.0"
+name: "blibli"
+version: "0.1"
+synopsis: "Pseudo package for defining project dependencies"
+
+depends: [
+  "eliom" {>= "10.0.0" & < "11.0.0"}
+  "ocsipersist-sqlite" {>= "1.0" & < "2.0"}
+  "ocsigen-ppx-rpc"
+]
