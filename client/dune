@@ -2,9 +2,7 @@
  (names blibli)
  (modes js byte)
  (preprocess
-  (pps
-   js_of_ocaml-ppx
-   lwt_ppx))
+  (pps js_of_ocaml-ppx lwt_ppx))
  (js_of_ocaml
   (build_runtime_flags :standard --enable use-js-string)
   (flags

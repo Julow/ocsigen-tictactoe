@@ -1,8 +1,20 @@
-(rule (target Makefile.ml) (deps ../Makefile.eliom)
+(rule (target Makefile.ml) (deps .././Makefile.eliom)
   (action
     (with-stdout-to %{target}
-      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../Makefile} --impl Makefile.eliom)))))
-(rule (target blibli.ml) (deps ../blibli.eliom)
+      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:.././Makefile} --impl %{deps})))))
+(rule (target blibli.ml) (deps .././blibli.eliom)
   (action
     (with-stdout-to %{target}
-      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../blibli} --impl blibli.eliom)))))
+      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:.././blibli} --impl %{deps})))))
+(rule (target game.ml) (deps ../services/game.eliom)
+  (action
+    (with-stdout-to %{target}
+      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../services/game} --impl %{deps})))))
+(rule (target main.ml) (deps ../services/main.eliom)
+  (action
+    (with-stdout-to %{target}
+      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../services/main} --impl %{deps})))))
+(rule (target shared.ml) (deps ../services/shared.eliom)
+  (action
+    (with-stdout-to %{target}
+      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../services/shared} --impl %{deps})))))

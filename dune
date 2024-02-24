@@ -1,11 +1,12 @@
-(dirs tools client assets)
+(dirs tools client services)
 
 (executables
  (names blibli)
  (modes
   (byte plugin)
   (native plugin))
- (libraries eliom.server ocsipersist.sqlite)
+ (libraries eliom.server ocsipersist.sqlite services)
+ (embed_in_plugin_libraries services)
  (preprocess
   (pps
    lwt_ppx

@@ -1,0 +1,14 @@
+(library
+ (name services)
+ (modes
+  byte
+  native)
+ (wrapped false)
+ (libraries eliom.server ocsipersist.sqlite)
+ (preprocess
+  (pps
+   lwt_ppx
+   js_of_ocaml-ppx_deriving_json
+   ocsigen-ppx-rpc
+   --rpc-raw
+   eliom.ppx.server)))
