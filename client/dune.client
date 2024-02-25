@@ -10,6 +10,10 @@
   (action
     (with-stdout-to %{target}
       (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../services/game} --impl %{deps})))))
+(rule (target game_state.ml) (deps ../services/game_state.eliom)
+  (action
+    (with-stdout-to %{target}
+      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../services/game_state} --impl %{deps})))))
 (rule (target main.ml) (deps ../services/main.eliom)
   (action
     (with-stdout-to %{target}
