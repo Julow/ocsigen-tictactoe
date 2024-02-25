@@ -15,15 +15,22 @@ end)
    blinking when changing page in iOS). *)
 let%client _ = Eliom_client.persist_document_head ()
 
-let%server main_service =
+let main_service =
   Eliom_service.create ~path:(Eliom_service.Path [])
     ~meth:(Eliom_service.Get Eliom_parameter.unit) ()
 
-let%server () = App.register ~service:main_service Main.run
-
-let%server game_service =
+let game_service =
   Eliom_service.create ~path:(Eliom_service.Path [])
     ~meth:(Eliom_service.Get Eliom_parameter.(suffix (string "room_name")))
     ()
 
-let%server () = App.register ~service:game_service Game.run
+let newgame_service =
+  Eliom_registration.Redirection.create ~options:`TemporaryRedirect
+    ~path:(Eliom_service.Path [ "new" ])
+    ~meth:(Eliom_service.Get Eliom_parameter.unit)
+    (Newgame.redirect ~game_service)
+
+let () =
+  App.register ~service:main_service (Main.run ~newgame_service);
+  App.register ~service:game_service Game.run;
+  ()

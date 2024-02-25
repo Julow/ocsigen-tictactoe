@@ -18,6 +18,10 @@
   (action
     (with-stdout-to %{target}
       (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../services/main} --impl %{deps})))))
+(rule (target newgame.ml) (deps ../services/newgame.eliom)
+  (action
+    (with-stdout-to %{target}
+      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo %{cmo:../services/newgame} --impl %{deps})))))
 (rule (target shared.ml) (deps ../services/shared.eliom)
   (action
     (with-stdout-to %{target}

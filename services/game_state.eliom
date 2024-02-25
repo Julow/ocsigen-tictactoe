@@ -24,3 +24,11 @@ let get_game name =
     let t = make () in
     Hashtbl.add games name t;
     t
+
+let game_counter = ref 0
+
+(** Generate a pseudo random name composed of 5 digits in base 16. *)
+let fresh_game_name () =
+  incr game_counter;
+  let id = Hashtbl.hash !game_counter mod 0xFFFFF in
+  Printf.sprintf "%05x" id
