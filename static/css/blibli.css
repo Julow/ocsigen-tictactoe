@@ -26,3 +26,18 @@ em {
 {
   display: none;
 }
+
+.status
+{
+  margin: 3em auto;
+  width: 500px;
+  padding: 1.5em;
+  background-color: lightgrey;
+  text-align: center;
+}
+
+.status:has([data-status=waiting]) { background-color: orange; }
+.status:has([data-status=playing]) { background-color: green; }
+.status:has([data-status=victory]) { background-color: gold; }
+.status:has([data-status=defeat]) { background-color: red; }
+.status:has([data-status=draw]) { background-color: grey; }

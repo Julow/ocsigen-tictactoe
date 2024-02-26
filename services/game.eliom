@@ -119,19 +119,20 @@ let%client player state grid server_events player_bus current_player grid_elts
     grid_elts;
 
   let update_status state =
-    (* Text to show to the player. *)
-    let txt =
+    (* Text to show to the player. [status_attr] is used for styling. *)
+    let txt, status_attr =
       match state with
-      | Game_state.Waiting_for_player1 -> "Waiting for player 1"
-      | Waiting_for_player2 -> "Waiting for player 2"
-      | Turn p when p = current_player -> "It's your turn"
-      | Turn _ -> "Opponent turn"
-      | Game_ended ((`P1 | `P2) as p) when p = current_player -> "Victory !"
-      | Game_ended (`P1 | `P2) -> "You loose :("
-      | Game_ended `Draw -> "Game ended on a draw"
+      | Game_state.Waiting_for_player1 -> ("Waiting for player 1", "waiting")
+      | Waiting_for_player2 -> ("Waiting for player 2", "waiting")
+      | Turn p when p = current_player -> ("It's your turn", "playing")
+      | Turn _ -> ("Opponent turn", "waiting")
+      | Game_ended ((`P1 | `P2) as p) when p = current_player ->
+          ("Victory !", "victory")
+      | Game_ended (`P1 | `P2) -> ("You loose :(", "defeat")
+      | Game_ended `Draw -> ("Game ended on a draw", "draw")
       | Waiting_for_rematch p when p = current_player ->
-          "Opponent ready for rematch"
-      | Waiting_for_rematch _ -> "Waiting for opponent"
+          ("Opponent ready for rematch", "playing")
+      | Waiting_for_rematch _ -> ("Waiting for opponent", "waiting")
     in
 
     (* Whether to show the rematch button. *)
@@ -142,6 +143,7 @@ let%client player state grid server_events player_bus current_player grid_elts
       | _ -> false
     in
     rematch_button##.disabled := Js.bool (not rematch);
+    status_elt##setAttribute (Js.string "data-status") (Js.string status_attr);
     status_elt##.innerText := Js.string txt
   in
 
@@ -233,7 +235,7 @@ let run room_name () =
         (body
            [
              h1 [ txt "Welcome to "; em [ txt "blibli" ]; txt "!" ];
-             div [ status_elt; rematch_button ];
+             div ~a:[ a_class [ "status" ] ] [ status_elt; rematch_button ];
              div
                ~a:[ a_class [ "grid" ] ]
                [
