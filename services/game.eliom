@@ -29,8 +29,10 @@ let%client set_cell_elt cell_elt cell =
   cell_elt##.innerText := Js.string txt
 
 (** Main client code. *)
-let%client client state grid server_events current_player player_bus grid_elts =
+let%client client state grid server_events current_player player_bus grid_elts
+    status_elt =
   let state = ref state and grid = ref grid in
+  let status_elt = To_dom.of_div status_elt in
 
   let cell_clicked x y cell_elt =
     match !state with
@@ -65,10 +67,25 @@ let%client client state grid server_events current_player player_bus grid_elts =
     done
   in
 
+  let update_status s =
+    state := s;
+    let txt =
+      match s with
+      | Game_state.Waiting_for_player1 -> "Waiting for player 1"
+      | Waiting_for_player2 -> "Waiting for player 2"
+      | Turn p when p = current_player -> "It's your turn"
+      | Turn _ -> "Opponent turn"
+      | Game_ended (`P1 | `P2 as p) when p = current_player -> "Victory !"
+      | Game_ended (`P1 | `P2) -> "You loose :("
+      | Game_ended `Draw -> "Game ended on a draw"
+    in
+    status_elt##.innerText := Js.string txt
+  in
+
   let handle_server_events = function
     | Game_state.State_changed (s, g) ->
         update_grid g;
-        state := s
+        update_status s
   in
 
   Lwt.async (fun () -> Lwt_stream.iter handle_server_events server_events);
@@ -105,8 +122,12 @@ let handle_client_events state current_player = function
 let run room_name () =
   let state = Game_state.get_game room_name in
   let current_player = enter_game state in
+
+  (* Use a bus for client-to-server communication instead of a [let%rpc] as the
+     closure authenticates the player for free. *)
   let player_bus = Eliom_bus.create [%json: Game_state.client_msg] in
-  let grid_elts =
+  let status_elt = D.(div [ txt "" ])
+  and grid_elts =
     Array.init 3 (fun _ -> Array.init 3 (fun _ -> D.(div [ txt "" ])))
   in
 
@@ -119,7 +140,7 @@ let run room_name () =
   let _ =
     [%client
       (client ~%(state.state) ~%(state.grid) ~%(state.server_channel)
-         ~%current_player ~%player_bus ~%grid_elts
+         ~%current_player ~%player_bus ~%grid_elts ~%status_elt
         : unit)]
   in
 
@@ -130,6 +151,7 @@ let run room_name () =
         (body
            [
              h1 [ txt "Welcome to "; em [ txt "blibli" ]; txt "!" ];
+             status_elt;
              div
                ~a:[ a_class [ "grid" ] ]
                [
