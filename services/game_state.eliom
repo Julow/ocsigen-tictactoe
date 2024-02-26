@@ -1,4 +1,3 @@
-open Lwt.Syntax
 (** Store the states of current games. *)
 
 module%shared Grid : sig
@@ -90,30 +89,40 @@ type t = {
   mutable grid : Grid.t;
   player1 : (client_msg, client_msg) Eliom_bus.t;
   player2 : (client_msg, client_msg) Eliom_bus.t;
-  bus : (server_msg, server_msg) Eliom_bus.t;
+  server_channel : server_msg Eliom_comet.Channel.t;
+  server_push : server_msg -> unit;
 }
 
 let make () =
+  let server_channel, server_push =
+    let stream, push = Lwt_stream.create () in
+    (* Disallow pushing [None], which would close the channel. *)
+    let push x = push (Some x) in
+    (* Using an unbuffered channel as the full state is always send. *)
+    (Eliom_comet.Channel.create_newest stream, push)
+  in
   {
     state = Waiting_for_player1;
     grid = Grid.create ();
     player1 = Eliom_bus.create [%json: client_msg];
     player2 = Eliom_bus.create [%json: client_msg];
-    bus = Eliom_bus.create [%json: server_msg];
+    server_channel;
+    server_push;
   }
 
 let set_state t state =
   t.state <- state;
-  Eliom_bus.write t.bus (State_changed (state, t.grid))
+  t.server_push (State_changed (state, t.grid))
 
 (** Return the same as [Grid.set]. *)
 let set_grid_cell t x y cell =
   let r = Grid.set t.grid x y cell in
-  let+ () = Eliom_bus.write t.bus (State_changed (t.state, t.grid)) in
+  t.server_push (State_changed (t.state, t.grid));
   r
 
-(** Send the unchanged state to clients. Used when the client made a unlawful move. *)
-let notify t = Eliom_bus.write t.bus (State_changed (t.state, t.grid))
+(** Send the unchanged state to clients. Used when the client made a unlawful
+    move. *)
+let notify t = t.server_push (State_changed (t.state, t.grid))
 
 let games : (string, t) Hashtbl.t = Hashtbl.create 64
 

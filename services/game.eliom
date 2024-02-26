@@ -2,7 +2,7 @@ open%client Js_of_ocaml
 open%client Js_of_ocaml_lwt
 open%shared Eliom_content.Html
 
-open Lwt.Syntax
+open! Lwt.Syntax
 open Shared
 
 let%shared cell_of_player = function
@@ -14,10 +14,10 @@ let%shared other_player = function `P1 -> `P2 | `P2 -> `P1
 let enter_game state =
   match state.Game_state.state with
   | Waiting_for_player1 ->
-      let+ () = Game_state.set_state state Waiting_for_player2 in
+      Game_state.set_state state Waiting_for_player2;
       (state.player1, `P1)
   | Waiting_for_player2 ->
-      let+ () = Game_state.set_state state (Turn `P1) in
+      Game_state.set_state state (Turn `P1);
       (state.player2, `P2)
   | _ -> failwith "Game in progress"
 
@@ -29,7 +29,7 @@ let%client set_cell_elt cell_elt cell =
   cell_elt##.innerText := Js.string txt
 
 (** Main client code. *)
-let%client client state grid server_bus current_player player_bus grid_elts =
+let%client client state grid server_events current_player player_bus grid_elts =
   let state = ref state and grid = ref grid in
 
   let cell_clicked x y cell_elt =
@@ -65,13 +65,13 @@ let%client client state grid server_bus current_player player_bus grid_elts =
     done
   in
 
-  let handle_msg = function
+  let handle_server_events = function
     | Game_state.State_changed (s, g) ->
         update_grid g;
         state := s
   in
 
-  Lwt.async (fun () -> Lwt_stream.iter handle_msg (Eliom_bus.stream server_bus));
+  Lwt.async (fun () -> Lwt_stream.iter handle_server_events server_events);
   ()
 
 (* Handle events from the client on the server side.
@@ -104,21 +104,21 @@ let handle_client_events state current_player = function
 
 let run room_name () =
   let state = Game_state.get_game room_name in
-  let* player_bus, current_player = enter_game state in
+  let player_bus, current_player = enter_game state in
   let grid_elts =
     Array.init 3 (fun _ -> Array.init 3 (fun _ -> D.(div [ txt "" ])))
   in
 
   (* React to client events. *)
   Lwt.async (fun () ->
-      Lwt_stream.iter_s
+      Lwt_stream.iter
         (handle_client_events state current_player)
         (Eliom_bus.stream player_bus));
 
   let _ =
     [%client
-      (client ~%(state.state) ~%(state.grid) ~%(state.bus) ~%current_player
-         ~%player_bus ~%grid_elts
+      (client ~%(state.state) ~%(state.grid) ~%(state.server_channel)
+         ~%current_player ~%player_bus ~%grid_elts
         : unit)]
   in
 
