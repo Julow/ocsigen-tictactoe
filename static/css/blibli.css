@@ -21,3 +21,8 @@ em {
   vertical-align: top;
   background: grey;
 }
+
+.rematch-btn[disabled]
+{
+  display: none;
+}

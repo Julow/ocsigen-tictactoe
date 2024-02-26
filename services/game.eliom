@@ -30,9 +30,10 @@ let%client set_cell_elt cell_elt cell =
 
 (** Main client code. *)
 let%client client state grid server_events current_player player_bus grid_elts
-    status_elt =
+    status_elt rematch_button =
   let state = ref state and grid = ref grid in
-  let status_elt = To_dom.of_div status_elt in
+  let status_elt = To_dom.of_span status_elt in
+  let rematch_button = To_dom.of_button rematch_button in
 
   let cell_clicked x y cell_elt =
     match !state with
@@ -75,20 +76,34 @@ let%client client state grid server_events current_player player_bus grid_elts
       | Waiting_for_player2 -> "Waiting for player 2"
       | Turn p when p = current_player -> "It's your turn"
       | Turn _ -> "Opponent turn"
-      | Game_ended (`P1 | `P2 as p) when p = current_player -> "Victory !"
+      | Game_ended ((`P1 | `P2) as p) when p = current_player -> "Victory !"
       | Game_ended (`P1 | `P2) -> "You loose :("
       | Game_ended `Draw -> "Game ended on a draw"
+      | Waiting_for_rematch p when p = current_player ->
+          "Opponent ready for rematch"
+      | Waiting_for_rematch _ -> "Waiting for opponent"
     in
+    let rematch =
+      match s with
+      | Game_ended _ -> true
+      | Waiting_for_rematch p when p = current_player -> true
+      | _ -> false
+    in
+    rematch_button##.disabled := Js.bool (not rematch);
     status_elt##.innerText := Js.string txt
   in
 
-  let handle_server_events = function
-    | Game_state.State_changed (s, g) ->
-        update_grid g;
-        update_status s
-  in
+  Lwt.async (fun () ->
+      Lwt_js_events.clicks rematch_button (fun _ _ ->
+          Eliom_bus.write player_bus Game_state.Rematch));
 
-  Lwt.async (fun () -> Lwt_stream.iter handle_server_events server_events);
+  Lwt.async (fun () ->
+      Lwt_stream.iter
+        (function
+          | Game_state.State_changed (s, g) ->
+              update_grid g;
+              update_status s)
+        server_events);
   ()
 
 (* Handle events from the client on the server side.
@@ -118,6 +133,18 @@ let handle_client_events state current_player = function
         | `Draw -> Game_state.set_state state (Game_ended `Draw)
         | `Going_on ->
             Game_state.set_state state (Turn (other_player current_player)))
+  | Rematch -> (
+      match state.Game_state.state with
+      | Game_state.Game_ended _ ->
+          (* First player to click rematch. *)
+          Game_state.set_state state
+            (Waiting_for_rematch (other_player current_player))
+      | Waiting_for_rematch p when p = current_player ->
+          (* Second player to click rematch, start a new game. *)
+          Game_state.set_state state
+            ~grid:(Game_state.Grid.create ())
+            (Turn `P1)
+      | _ -> Game_state.notify state)
 
 let run room_name () =
   let state = Game_state.get_game room_name in
@@ -126,7 +153,9 @@ let run room_name () =
   (* Use a bus for client-to-server communication instead of a [let%rpc] as the
      closure authenticates the player for free. *)
   let player_bus = Eliom_bus.create [%json: Game_state.client_msg] in
-  let status_elt = D.(div [ txt "" ])
+  let status_elt = D.(span [ txt "" ])
+  and rematch_button =
+    D.(button ~a:[ a_class [ "rematch-btn" ]; a_disabled () ] [ txt "Rematch" ])
   and grid_elts =
     Array.init 3 (fun _ -> Array.init 3 (fun _ -> D.(div [ txt "" ])))
   in
@@ -140,7 +169,7 @@ let run room_name () =
   let _ =
     [%client
       (client ~%(state.state) ~%(state.grid) ~%(state.server_channel)
-         ~%current_player ~%player_bus ~%grid_elts ~%status_elt
+         ~%current_player ~%player_bus ~%grid_elts ~%status_elt ~%rematch_button
         : unit)]
   in
 
@@ -151,7 +180,7 @@ let run room_name () =
         (body
            [
              h1 [ txt "Welcome to "; em [ txt "blibli" ]; txt "!" ];
-             status_elt;
+             div [ status_elt; rematch_button ];
              div
                ~a:[ a_class [ "grid" ] ]
                [

@@ -72,13 +72,15 @@ end = struct
 end
 
 type%shared state =
-  | Waiting_for_player1
-  | Waiting_for_player2
+  | Waiting_for_player1  (** A fresh game with no player. *)
+  | Waiting_for_player2  (** One player is connected. *)
   | Turn of [ `P1 | `P2 ]
   | Game_ended of [ `P1 | `P2 | `Draw ]
+  | Waiting_for_rematch of [ `P1 | `P2 ]
+      (** One player clicked "rematch". Argument is the other player. *)
 [@@deriving json]
 
-type%shared client_msg = Click of int * int [@@deriving json]
+type%shared client_msg = Click of int * int | Rematch [@@deriving json]
 
 type%shared server_msg =
   | State_changed of state * Grid.t  (** The state or the grid changed. *)
@@ -106,8 +108,9 @@ let make () =
     server_push;
   }
 
-let set_state t state =
+let set_state t ?grid state =
   t.state <- state;
+  (match grid with Some g -> t.grid <- g | None -> ());
   t.server_push (State_changed (state, t.grid))
 
 (** Return the same as [Grid.set]. *)
