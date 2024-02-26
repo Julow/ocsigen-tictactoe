@@ -5,3 +5,19 @@
 em {
   color: red;
 }
+
+.grid
+{
+  width: 500px;
+  margin: 3em auto;
+}
+
+.grid > div > div
+{
+  display: inline-block;
+  width: 2em;
+  height: 2em;
+  margin: 0.2em;
+  vertical-align: top;
+  background: grey;
+}
