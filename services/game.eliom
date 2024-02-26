@@ -15,10 +15,10 @@ let enter_game state =
   match state.Game_state.state with
   | Waiting_for_player1 ->
       Game_state.set_state state Waiting_for_player2;
-      (state.player1, `P1)
+      `P1
   | Waiting_for_player2 ->
       Game_state.set_state state (Turn `P1);
-      (state.player2, `P2)
+      `P2
   | _ -> failwith "Game in progress"
 
 (** Change the corresponding cell element to [cell]. *)
@@ -104,7 +104,8 @@ let handle_client_events state current_player = function
 
 let run room_name () =
   let state = Game_state.get_game room_name in
-  let player_bus, current_player = enter_game state in
+  let current_player = enter_game state in
+  let player_bus = Eliom_bus.create [%json: Game_state.client_msg] in
   let grid_elts =
     Array.init 3 (fun _ -> Array.init 3 (fun _ -> D.(div [ txt "" ])))
   in

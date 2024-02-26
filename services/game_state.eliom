@@ -87,8 +87,6 @@ type%shared server_msg =
 type t = {
   mutable state : state;
   mutable grid : Grid.t;
-  player1 : (client_msg, client_msg) Eliom_bus.t;
-  player2 : (client_msg, client_msg) Eliom_bus.t;
   server_channel : server_msg Eliom_comet.Channel.t;
   server_push : server_msg -> unit;
 }
@@ -104,8 +102,6 @@ let make () =
   {
     state = Waiting_for_player1;
     grid = Grid.create ();
-    player1 = Eliom_bus.create [%json: client_msg];
-    player2 = Eliom_bus.create [%json: client_msg];
     server_channel;
     server_push;
   }
