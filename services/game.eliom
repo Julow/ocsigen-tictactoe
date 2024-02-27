@@ -218,6 +218,7 @@ let run room_name () =
   and rematch_button =
     D.(button ~a:[ a_class [ "rematch-btn" ]; a_disabled () ] [ txt "Rematch" ])
   and grid_elts =
+    (* The sensitive parts of the grid. *)
     Array.init 3 (fun _ -> Array.init 3 (fun _ -> D.(div [ txt "" ])))
   in
 
@@ -228,6 +229,15 @@ let run room_name () =
         : unit Lwt.t)]
   in
 
+  (* The final HTML grid. *)
+  let grid_elts =
+    Array.map
+      (fun row ->
+        F.div (Array.map (fun cell -> F.div [ cell ]) row |> Array.to_list))
+      grid_elts
+    |> Array.to_list
+  in
+
   Lwt.return
     F.(
       html
@@ -235,12 +245,10 @@ let run room_name () =
         (body
            [
              h1 [ txt "Welcome to "; em [ txt "blibli" ]; txt "!" ];
-             div ~a:[ a_class [ "status" ] ] [ status_elt; rematch_button ];
              div
-               ~a:[ a_class [ "grid" ] ]
+               ~a:[ a_class [ "game-container" ] ]
                [
-                 div (Array.to_list grid_elts.(0));
-                 div (Array.to_list grid_elts.(1));
-                 div (Array.to_list grid_elts.(2));
+                 div ~a:[ a_class [ "status" ] ] [ status_elt; rematch_button ];
+                 div ~a:[ a_class [ "grid" ] ] grid_elts;
                ];
            ]))

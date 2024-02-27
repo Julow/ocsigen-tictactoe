@@ -6,31 +6,58 @@ em {
   color: red;
 }
 
-.grid
+.game-container
 {
   width: 500px;
   margin: 3em auto;
+  text-align: center;
+}
+
+.grid
+{
+  display: inline-block;
+  margin: 2em 0;
+  padding: 10px;
+  border: 6px solid #ddd;
+  border-radius: 24px;
 }
 
 .grid > div > div
 {
   display: inline-block;
-  width: 2em;
-  height: 2em;
-  margin: 0.2em;
+  margin: 3px;
+  padding: 5px;
+  border: 3px solid #bbb;
+  border-radius: 12px;
   vertical-align: top;
-  background: grey;
 }
 
-.rematch-btn[disabled]
+.grid > div > div > div
 {
-  display: none;
+  width: 80px;
+  height: 80px;
+  line-height: 80px;
+  text-align: center;
+  border-radius: 4px;
+  font-size: 72px;
+  cursor: pointer;
 }
+
+.grid > div > div > div:hover
+{
+  background-color: #ddd;
+}
+
+.rematch-btn
+{
+  margin: 0 1em;
+}
+
+.rematch-btn[disabled] { display: none; }
 
 .status
 {
-  margin: 3em auto;
-  width: 500px;
+  margin: 2em 0;
   padding: 1.5em;
   background-color: lightgrey;
   text-align: center;
