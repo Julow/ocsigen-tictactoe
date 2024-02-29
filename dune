@@ -1,4 +1,4 @@
-(dirs tools client services)
+(dirs tools client services static static/css)
 
 (executable
  (name blibli)
@@ -21,7 +21,8 @@
   blibli.cma
   client/blibli.bc
   client/blibli.bc.js
-  tools/check_modules.ml)
+  tools/check_modules.ml
+  dist)
  (action
   (run ocaml tools/check_modules.ml blibli)))
 
@@ -29,3 +30,15 @@
  (_
   (flags
    (:standard -w -9-37-39))))
+
+(rule
+ (target
+  (dir dist))
+ (action
+  (progn
+   (bash
+    "mkdir -p dist/{lib/blibli,var/{{log,data,www}/blibli,www/blibli/css,run}}")
+   (bash "cp %{dep:blibli.cmxs} dist/lib/blibli/blibli.cmxs")
+   (bash "cp %{dep:client/blibli.bc.js} dist/var/www/blibli/blibli.js")
+   (bash
+    "cp %{dep:static/css/blibli.css} dist/var/www/blibli/css/blibli.css"))))

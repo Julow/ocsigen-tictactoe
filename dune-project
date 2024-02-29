@@ -9,5 +9,7 @@
 
 (wrapped_executables false)
 
+(using directory-targets 0.1)
+
 (formatting
  (enabled_for ocaml "eliom-server" dune))
