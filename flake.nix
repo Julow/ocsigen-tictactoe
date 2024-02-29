@@ -24,7 +24,7 @@
           };
         } "blibli" ./. { ocaml-system = "*"; };
 
-        blibli = scope.blibli.overrideAttrs (_: {
+        dist = scope.blibli.overrideAttrs (_: {
           buildPhase = "dune build @blibli";
           installPhase = ''
             cp -rTL _build/default/dist $out
@@ -32,60 +32,59 @@
           '';
         });
 
-        ocsigen_debug_conf = dist:
-          pkgs.writeText "ocsigen.debug.conf" ''
-            <ocsigen>
-              <server>
-                <port>8080</port>
-                <logdir>local/var/log/blibli</logdir>
-                <datadir>local/var/data/blibli</datadir>
-                <charset>utf-8</charset>
-                <uploaddir>/tmp</uploaddir>
-                <usedefaulthostname/>
-                <debugmode/>
-                <extension findlib-package="ocsigenserver.ext.accesscontrol"/>
-                <extension findlib-package="ocsigenserver.ext.cors"/>
-                <commandpipe>local/var/run/blibli-cmd</commandpipe>
-                <extension findlib-package="ocsigenserver.ext.staticmod"/>
-                <extension findlib-package="ocsipersist.sqlite">
-                  <database file="local/var/data/blibli/ocsidb"/>
-                </extension>
-                <extension findlib-package="eliom.server">
-                  <!-- Ask Eliom to ignore UTM parameters and others: -->
-                  <ignoredgetparams regexp="utm_[a-z]*|[a-z]*clid|li_fat_id"/>
-                </extension>
-                <host hostfilter="*">
-                  <static dir="${dist}/var/www/blibli" />
-                  <eliommodule module="${dist}/lib/blibli/blibli.cmxs">
-                    <app name="blibli" css="${dist}/static/css/blibli.css" />
-                    <avatars dir="local/var/www/avatars" />
-                  </eliommodule>
-                  <eliom/>
-                  <if>
-                    <header name="origin" regexp="http://localhost:8000"/>
-                    <then>
-                      <cors max_age="86400"
-                        credentials="true"
-                        methods="POST,GET,HEAD"
-                        exposed_headers="x-eliom-application,x-eliom-location,x-eliom-set-process-cookies,x-eliom-set-cookie-substitutes"/>
-                    </then>
-                  </if>
-                </host>
-              </server>
-            </ocsigen>
-          '';
+        ocsigen_debug_conf = pkgs.writeText "ocsigen.debug.conf" ''
+          <ocsigen>
+            <server>
+              <port>8080</port>
+              <logdir>local/var/log/blibli</logdir>
+              <datadir>local/var/data/blibli</datadir>
+              <charset>utf-8</charset>
+              <uploaddir>/tmp</uploaddir>
+              <usedefaulthostname/>
+              <debugmode/>
+              <extension findlib-package="ocsigenserver.ext.accesscontrol"/>
+              <extension findlib-package="ocsigenserver.ext.cors"/>
+              <commandpipe>local/var/run/blibli-cmd</commandpipe>
+              <extension findlib-package="ocsigenserver.ext.staticmod"/>
+              <extension findlib-package="ocsipersist.sqlite">
+                <database file="local/var/data/blibli/ocsidb"/>
+              </extension>
+              <extension findlib-package="eliom.server">
+                <!-- Ask Eliom to ignore UTM parameters and others: -->
+                <ignoredgetparams regexp="utm_[a-z]*|[a-z]*clid|li_fat_id"/>
+              </extension>
+              <host hostfilter="*">
+                <static dir="${dist}/var/www/blibli" />
+                <eliommodule module="${dist}/lib/blibli/blibli.cmxs">
+                  <app name="blibli" css="${dist}/static/css/blibli.css" />
+                  <avatars dir="local/var/www/avatars" />
+                </eliommodule>
+                <eliom/>
+                <if>
+                  <header name="origin" regexp="http://localhost:8000"/>
+                  <then>
+                    <cors max_age="86400"
+                      credentials="true"
+                      methods="POST,GET,HEAD"
+                      exposed_headers="x-eliom-application,x-eliom-location,x-eliom-set-process-cookies,x-eliom-set-cookie-substitutes"/>
+                  </then>
+                </if>
+              </host>
+            </server>
+          </ocsigen>
+        '';
 
         runserver = pkgs.writeShellScript "blibli-run" ''
-          export OCAMLPATH=`cat ${blibli}/lib/ocaml_library_path`
+          export OCAMLPATH=`cat ${dist}/lib/ocaml_library_path`
           ${scope.ocsigenserver}/bin/ocsigenserver.opt -c "$1"
         '';
 
         runserver_debug = pkgs.writeShellScript "blibli-run" ''
-          ${runserver} ${ocsigen_debug_conf blibli}
+          ${runserver} ${ocsigen_debug_conf}
         '';
 
       in {
-        packages = { inherit blibli runserver runserver_debug; };
-        defaultPackage = runserver;
+        packages = { inherit dist runserver runserver_debug; };
+        defaultPackage = runserver_debug;
       });
 }
