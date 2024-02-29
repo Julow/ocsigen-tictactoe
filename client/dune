@@ -15,4 +15,4 @@
  ; source maps are slow...
  (libraries eliom.client))
 
-(include dune.client)
+(dynamic_include ../dune.client)

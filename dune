@@ -31,6 +31,18 @@
   (flags
    (:standard -w -9-37-39))))
 
+; Generate the Dune rules for copying the client modules.
+; Defined here to avoid a dependency cycle with the (dynamic_include) stanza.
+
+(rule
+ (deps
+  (glob_files *.eliom)
+  (source_tree services))
+ (action
+  (with-stdout-to
+   dune.client
+   (run ocaml %{dep:tools/gen_dune.ml}))))
+
 (rule
  (target
   (dir dist))
