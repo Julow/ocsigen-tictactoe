@@ -41,3 +41,7 @@ Project structure:
 
 - Makefile
   Contains the extra step needed to run the app locally with `make test`.
+
+- flake.nix
+  Package the app using Nix and [opam-nix](https://github.com/tweag/opam-nix).
+  Can be removed if not used.
