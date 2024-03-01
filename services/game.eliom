@@ -175,13 +175,19 @@ let%client spectator ~room_name ~state ~grid ~server_events ~grid_elts
       | _ -> true
     in
     play_button##.disabled := Js.bool play_btn_disabled;
-    let updt txt = status_elt##.innerText := Js.string txt in
+    let updt ~status txt =
+      status_elt##setAttribute (Js.string "data-status") (Js.string status);
+      status_elt##.innerText := Js.string txt
+    in
     (* Text to show to the spectator. *)
     match state with
-    | Game_state.Turn _ -> updt "Playing"
-    | Game_ended `P1 -> updt "Player 1 wins"
-    | Game_ended `P2 -> updt "Player 2 wins"
-    | Game_ended `Draw -> updt "Game ended on a draw"
+    | Game_state.Waiting_for_player1 ->
+        updt ~status:"waiting" "Waiting for player 1"
+    | Waiting_for_player2 -> updt ~status:"waiting" "Waiting for player 2"
+    | Turn _ -> updt ~status:"spectator" "Playing"
+    | Game_ended `P1 -> updt ~status:"spectator" "Player 1 wins"
+    | Game_ended `P2 -> updt ~status:"spectator" "Player 2 wins"
+    | Game_ended `Draw -> updt ~status:"spectator" "Game ended on a draw"
     | _ -> ()
   in
 

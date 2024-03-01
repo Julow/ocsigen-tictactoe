@@ -59,7 +59,6 @@ em {
 {
   margin: 2em 0;
   padding: 1.5em;
-  background-color: lightgrey;
   text-align: center;
 }
 
@@ -68,3 +67,4 @@ em {
 .status:has([data-status=victory]) { background-color: gold; }
 .status:has([data-status=defeat]) { background-color: red; }
 .status:has([data-status=draw]) { background-color: grey; }
+.status:has([data-status=spectator]) { background-color: lightblue; }
