@@ -95,8 +95,8 @@ let%client update_grid grid_elts grid =
   done
 
 (* Start the game as a player. *)
-let%client player state grid server_events player_bus current_player grid_elts
-    status_elt rematch_button =
+let%client player ~state ~grid ~server_events ~player_bus ~current_player
+    ~grid_elts ~status_elt ~rematch_button =
   let state = ref state and grid = ref grid in
 
   let cell_clicked x y cell_elt =
@@ -164,11 +164,17 @@ let%client player state grid server_events player_bus current_player grid_elts
         server_events);
   ()
 
-(* View an in progress game without interacting. *)
-let%client spectator state grid server_events grid_elts status_elt
-    rematch_button =
-  rematch_button##.disabled := Js.bool true;
+(* View an in progress game without interacting. Returns when clicking the play
+   button. *)
+let%client spectator ~room_name ~state ~grid ~server_events ~grid_elts
+    ~status_elt ~play_button =
   let update_status state =
+    let play_btn_disabled =
+      match state with
+      | Game_state.Waiting_for_player1 | Waiting_for_player2 -> false
+      | _ -> true
+    in
+    play_button##.disabled := Js.bool play_btn_disabled;
     let updt txt = status_elt##.innerText := Js.string txt in
     (* Text to show to the spectator. *)
     match state with
@@ -178,22 +184,49 @@ let%client spectator state grid server_events grid_elts status_elt
     | Game_ended `Draw -> updt "Game ended on a draw"
     | _ -> ()
   in
+
+  let return_p, return_u = Lwt.wait () in
+  let try_enter_game () =
+    (* Enter the game, the server returns [None] if the game is in
+       progress. *)
+    let+ game = enter_game room_name in
+    match game with
+    | Some r ->
+        play_button##.disabled := Js.bool true;
+        Lwt.wakeup_later return_u (`Enter_game r)
+    | None -> ()
+  in
+
   update_status state;
   update_grid grid_elts grid;
-  (* Listen to server events. *)
-  Lwt.async (fun () ->
-      Lwt_stream.iter
-        (function
-          | Game_state.State_changed (s, g) ->
-              update_grid grid_elts g;
-              update_status s)
-        server_events);
-  ()
+
+  (* Normally do not terminate but we need a return value compatible with
+     [return_p]. *)
+  let listeners =
+    let+ () =
+      Lwt.pick
+        [
+          (* Listen to clicks on the play button. *)
+          Lwt_js_events.clicks play_button (fun _ _ -> try_enter_game ());
+          (* Listen to server events. *)
+          Lwt_stream.iter
+            (function
+              | Game_state.State_changed (s, g) ->
+                  update_grid grid_elts g;
+                  update_status s)
+            server_events;
+        ]
+    in
+    `Exit
+  in
+  (* Cancel the listeners when returning. *)
+  Lwt.pick [ return_p; listeners ]
 
 (* Main client code. *)
 let%client client room_name state grid server_events grid_elts status_elt
-    rematch_button =
+    play_button rematch_button =
   let status_elt = To_dom.of_span status_elt in
+  let play_button = To_dom.of_button play_button in
   let rematch_button = To_dom.of_button rematch_button in
 
   let grid_elts =
@@ -202,21 +235,26 @@ let%client client room_name state grid server_events grid_elts status_elt
         Array.map (fun cell_elt -> To_dom.of_div cell_elt) row_elts)
       grid_elts
   in
+  rematch_button##.disabled := Js.bool true;
 
-  let+ game = enter_game room_name in
-  match game with
-  | Some (current_player, player_bus) ->
-      player state grid server_events player_bus current_player grid_elts
-        status_elt rematch_button
-  | None ->
-      spectator state grid server_events grid_elts status_elt rematch_button
+  let+ r =
+    spectator ~room_name ~state ~grid ~server_events ~grid_elts ~status_elt
+      ~play_button
+  in
+  match r with
+  | `Enter_game (current_player, player_bus) ->
+      player ~state ~grid ~server_events ~player_bus ~current_player ~grid_elts
+        ~status_elt ~rematch_button
+  | `Exit -> ()
 
 let run room_name () =
   let state = Game_state.get_game room_name in
 
   let status_elt = D.(span [ txt "" ])
+  and play_button =
+    D.(button ~a:[ a_class [ "status-btn" ]; a_disabled () ] [ txt "Play" ])
   and rematch_button =
-    D.(button ~a:[ a_class [ "rematch-btn" ]; a_disabled () ] [ txt "Rematch" ])
+    D.(button ~a:[ a_class [ "status-btn" ]; a_disabled () ] [ txt "Rematch" ])
   and grid_elts =
     (* The sensitive parts of the grid. *)
     Array.init 3 (fun _ -> Array.init 3 (fun _ -> D.(div [ txt "" ])))
@@ -225,7 +263,8 @@ let run room_name () =
   let _ =
     [%client
       (client ~%room_name ~%(state.state) ~%(state.grid)
-         ~%(state.server_channel) ~%grid_elts ~%status_elt ~%rematch_button
+         ~%(state.server_channel) ~%grid_elts ~%status_elt ~%play_button
+         ~%rematch_button
         : unit Lwt.t)]
   in
 
@@ -248,7 +287,9 @@ let run room_name () =
              div
                ~a:[ a_class [ "game-container" ] ]
                [
-                 div ~a:[ a_class [ "status" ] ] [ status_elt; rematch_button ];
+                 div
+                   ~a:[ a_class [ "status" ] ]
+                   [ status_elt; play_button; rematch_button ];
                  div ~a:[ a_class [ "grid" ] ] grid_elts;
                ];
            ]))

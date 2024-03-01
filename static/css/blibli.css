@@ -48,12 +48,12 @@ em {
   background-color: #ddd;
 }
 
-.rematch-btn
+.status-btn
 {
   margin: 0 1em;
 }
 
-.rematch-btn[disabled] { display: none; }
+.status-btn[disabled] { display: none; }
 
 .status
 {
