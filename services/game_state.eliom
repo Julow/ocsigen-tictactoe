@@ -86,11 +86,24 @@ type%shared server_msg =
   | State_changed of state * Grid.t  (** The state or the grid changed. *)
 [@@deriving json]
 
+type player_token = < >
+(** An instance of this object represents a player. Compared with physical
+    equality. *)
+
+type player = {
+  player_token : player_token;  (** Authenticates players using sessions. *)
+  player : [ `P1 | `P2 ];
+  player_bus : (client_msg, client_msg) Eliom_bus.t;
+      (** Bus used for sending events from the client to the server. It is not
+          shared. *)
+}
+
 type t = {
   mutable state : state;
   mutable grid : Grid.t;
   server_channel : server_msg Eliom_comet.Channel.t;
   server_push : server_msg -> unit;
+  mutable players : player list;
 }
 
 let make () =
@@ -106,6 +119,7 @@ let make () =
     grid = Grid.create ();
     server_channel;
     server_push;
+    players = [];
   }
 
 let set_state t ?grid state =
@@ -122,20 +136,3 @@ let set_grid_cell t x y cell =
 (** Send the unchanged state to clients. Used when the client made a unlawful
     move. *)
 let notify t = t.server_push (State_changed (t.state, t.grid))
-
-let games : (string, t) Hashtbl.t = Hashtbl.create 64
-
-let get_game name =
-  try Hashtbl.find games name
-  with Not_found ->
-    let t = make () in
-    Hashtbl.add games name t;
-    t
-
-let game_counter = ref 0
-
-(** Generate a pseudo random name composed of 5 digits in base 16. *)
-let fresh_game_name () =
-  incr game_counter;
-  let id = Hashtbl.hash !game_counter mod 0xFFFFF in
-  Printf.sprintf "%05x" id

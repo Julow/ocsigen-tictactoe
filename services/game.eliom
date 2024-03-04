@@ -57,11 +57,12 @@ let%rpc enter_game (room_name : string) :
     ([ `P1 | `P2 ] * (Game_state.client_msg, Game_state.client_msg) Eliom_bus.t)
     option
     Lwt.t =
-  let state = Game_state.get_game room_name in
+  let state = Game_sessions.get_game room_name in
   let enter_player player =
     (* Use a bus for client-to-server events instead of a [let%rpc] as the
        closure authenticates the player for free. *)
     let bus = Eliom_bus.create [%json: Game_state.client_msg] in
+    Game_sessions.record_player state player bus;
     (* React to client events. *)
     Lwt.async (fun () ->
         Lwt_stream.iter
@@ -77,7 +78,9 @@ let%rpc enter_game (room_name : string) :
   | Waiting_for_player2 ->
       Game_state.set_state state (Turn `P1);
       enter_player `P2
-  | _ -> Lwt.return None
+  | _ ->
+      (* The game do not await new players *)
+      Lwt.return None
 
 (* Change the corresponding cell element to [cell]. *)
 let%client set_cell_elt cell_elt cell =
@@ -147,6 +150,9 @@ let%client player ~state ~grid ~server_events ~player_bus ~current_player
     status_elt##.innerText := Js.string txt
   in
 
+  update_status !state;
+  update_grid grid_elts !grid;
+
   (* [rematch_button] click events. *)
   Lwt.async (fun () ->
       Lwt_js_events.clicks rematch_button (fun _ _ ->
@@ -162,7 +168,7 @@ let%client player ~state ~grid ~server_events ~player_bus ~current_player
               update_grid grid_elts g;
               update_status s)
         server_events);
-  ()
+  Lwt.return_unit
 
 (* View an in progress game without interacting. Returns when clicking the play
    button. *)
@@ -230,7 +236,7 @@ let%client spectator ~room_name ~state ~grid ~server_events ~grid_elts
 
 (* Main client code. *)
 let%client client room_name state grid server_events grid_elts status_elt
-    play_button rematch_button =
+    play_button rematch_button player_state =
   let status_elt = To_dom.of_span status_elt in
   let play_button = To_dom.of_button play_button in
   let rematch_button = To_dom.of_button rematch_button in
@@ -241,20 +247,31 @@ let%client client room_name state grid server_events grid_elts status_elt
         Array.map (fun cell_elt -> To_dom.of_div cell_elt) row_elts)
       grid_elts
   in
+  play_button##.disabled := Js.bool true;
   rematch_button##.disabled := Js.bool true;
 
-  let+ r =
-    spectator ~room_name ~state ~grid ~server_events ~grid_elts ~status_elt
-      ~play_button
+  let play ~current_player ~player_bus =
+    player ~state ~grid ~server_events ~player_bus ~current_player ~grid_elts
+      ~status_elt ~rematch_button
   in
-  match r with
-  | `Enter_game (current_player, player_bus) ->
-      player ~state ~grid ~server_events ~player_bus ~current_player ~grid_elts
-        ~status_elt ~rematch_button
-  | `Exit -> ()
+
+  match player_state with
+  | Some (current_player, player_bus) ->
+      (* Player is already playing on this game. *)
+      play ~current_player ~player_bus
+  | None -> (
+      (* Enter spectator mode until the play button is clicked. *)
+      let* r =
+        spectator ~room_name ~state ~grid ~server_events ~grid_elts ~status_elt
+          ~play_button
+      in
+      match r with
+      | `Enter_game (current_player, player_bus) ->
+          play ~current_player ~player_bus
+      | `Exit -> Lwt.return_unit)
 
 let run room_name () =
-  let state = Game_state.get_game room_name in
+  let state = Game_sessions.get_game room_name in
 
   let status_elt = D.(span [ txt "" ])
   and play_button =
@@ -266,11 +283,12 @@ let run room_name () =
     Array.init 3 (fun _ -> Array.init 3 (fun _ -> D.(div [ txt "" ])))
   in
 
+  let player_state = Game_sessions.is_player_in_game state in
   let _ =
     [%client
       (client ~%room_name ~%(state.state) ~%(state.grid)
          ~%(state.server_channel) ~%grid_elts ~%status_elt ~%play_button
-         ~%rematch_button
+         ~%rematch_button ~%player_state
         : unit Lwt.t)]
   in
 
