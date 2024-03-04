@@ -1,5 +1,8 @@
 # Online Tictactoe using Ocsigen
 
+This is an online Tictactoe game implemented using ocsigen.
+Try it [online](https://j3s.fr/blibli/).
+
 ## Usage
 
 The app can be built and run using:
