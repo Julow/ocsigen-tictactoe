@@ -48,3 +48,7 @@ Project structure:
 - flake.nix
   Package the app using Nix and [opam-nix](https://github.com/tweag/opam-nix).
   Can be removed if not used.
+
+- UNLICENSE
+  Make sure to remove this file before distributing any code built on top of
+  this template.
