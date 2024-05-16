@@ -17,12 +17,10 @@
 
         pkgs = import nixpkgs { inherit system; };
 
-        scope = buildOpamProject {
-          resolveArgs = {
-            depopts = false;
-            env.sys-ocaml-version = "4.14.1";
-          };
-        } "blibli" ./. { ocaml-system = "*"; };
+        scope = buildOpamProject { } "blibli" ./. {
+          # Eliom's dependencies are not set right
+          ppxlib = "0.31.0";
+        };
 
         dist = scope.blibli.overrideAttrs (_: {
           buildPhase = "dune build @blibli";
