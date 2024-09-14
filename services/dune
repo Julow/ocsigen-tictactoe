@@ -3,7 +3,7 @@
  (modes byte native)
  ; Disable wrapping so client and server modules have the same name.
  (wrapped false)
- (libraries eliom.server ocsipersist.sqlite)
+ (libraries eliom.server ocsipersist-sqlite)
  (preprocess
   (pps
    lwt_ppx

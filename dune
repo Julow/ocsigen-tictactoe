@@ -5,7 +5,7 @@
  (modes
   (byte plugin)
   (native plugin))
- (libraries eliom.server ocsipersist.sqlite services)
+ (libraries eliom.server ocsipersist-sqlite services)
  (embed_in_plugin_libraries services)
  (preprocess
   (pps
