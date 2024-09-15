@@ -5,7 +5,7 @@ build:
 	cp -rT --no-preserve=mode,ownership _build/default/dist local
 
 test: build
-	ocsigenserver.opt -c blibli.debug.conf
+	dune exec -- blibli
 
 clean:
 	dune clean

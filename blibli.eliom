@@ -34,3 +34,26 @@ let () =
   App.register ~service:main_service (Main.run ~newgame_service);
   App.register ~service:game_service Game.run;
   ()
+
+let _ =
+  Ocsigen_server.start
+    ~ports:[ (`All, 8080) ]
+    ~command_pipe:"local/var/run/blibli-cmd" ~logdir:"local/var/log/blibli"
+    ~datadir:"local/var/data/blibli" ~default_charset:(Some "utf-8")
+    [
+      Ocsigen_server.host ~regexp:".*"
+        [
+          Staticmod.run ~dir:"local/var/www/blibli" ();
+          Eliom.run ();
+          Cors.run ~max_age:86400 ~credentials:true
+            ~methods:[ `POST; `GET; `HEAD ]
+            ~exposed_headers:
+              [
+                "x-eliom-application";
+                "x-eliom-location";
+                "x-eliom-set-process-cookies";
+                "x-eliom-set-cookie-substitutes";
+              ]
+            ();
+        ];
+    ]

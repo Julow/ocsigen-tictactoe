@@ -1,11 +1,20 @@
 (dirs tools client services static static/css)
 
 (executable
+ (public_name blibli)
  (name blibli)
  (modes
+  exe
   (byte plugin)
   (native plugin))
- (libraries eliom.server ocsipersist-sqlite services)
+ (libraries
+  eliom.server
+  ocsipersist-sqlite
+  services
+  ocsigenserver
+  ocsigenserver.ext.staticmod
+  ocsigenserver.ext.cors
+  ocsigenserver.ext.accesscontrol)
  (embed_in_plugin_libraries services)
  (preprocess
   (pps
@@ -50,7 +59,6 @@
   (progn
    (bash
     "mkdir -p dist/{lib/blibli,var/{{log,data,www}/blibli,www/blibli/css,run}}")
-   (bash "cp %{dep:blibli.cmxs} dist/lib/blibli/blibli.cmxs")
    (bash "cp %{dep:client/blibli.bc.js} dist/var/www/blibli/blibli.js")
    (bash
     "cp %{dep:static/css/blibli.css} dist/var/www/blibli/css/blibli.css"))))
