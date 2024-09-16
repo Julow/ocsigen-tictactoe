@@ -3,7 +3,7 @@ open%client Js_of_ocaml_lwt
 open%shared Eliom_content.Html
 open%client Lwt.Syntax
 
-open Shared
+open Html_utils
 
 let%shared cell_of_player = function
   | `P1 -> Game_state.Grid.X

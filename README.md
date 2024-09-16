@@ -29,8 +29,10 @@ Project structure:
   to define each service in a different module.
 
 - services/
-  This library contains the services and modules shared between the client and
-  server.
+  This library contains the web services.
+
+- lib/
+  This library contains modules shared between the client and the server.
 
 - blibli.debug.conf
   The ocsigen configuration used when running the app locally.

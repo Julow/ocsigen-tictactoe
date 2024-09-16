@@ -25,6 +25,7 @@ let handle_file_client nm =
 let read_dir d = Sys.readdir d |> Array.map (fun f -> Filename.concat d f)
 
 let () =
-  Array.concat (List.map read_dir [ "."; "services" ])
+  let args = List.tl (Array.to_list Sys.argv) in
+  Array.concat (List.map read_dir args)
   |> Array.to_list |> List.sort compare
   |> List.iter handle_file_client
