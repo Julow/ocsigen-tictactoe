@@ -34,9 +34,6 @@ Project structure:
 - lib/
   This library contains modules shared between the client and the server.
 
-- blibli.debug.conf
-  The ocsigen configuration used when running the app locally.
-
 - static/
   Statically served files. They will be copied into the `var/www` directory.
 
