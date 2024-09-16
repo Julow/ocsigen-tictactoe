@@ -1,4 +1,4 @@
-(dirs tools client services lib static static/css)
+(dirs ../tools client services lib static static/css)
 
 (executable
  (public_name blibli)
@@ -31,10 +31,10 @@
   blibli.cma
   client/blibli.bc
   client/blibli.bc.js
-  tools/check_modules.ml
+  ../tools/check_modules.ml
   dist)
  (action
-  (run ocaml tools/check_modules.ml blibli)))
+  (run ocaml ../tools/check_modules.ml blibli)))
 
 (env
  (_
@@ -52,7 +52,7 @@
  (action
   (with-stdout-to
    dune.client
-   (run ocaml %{dep:tools/gen_dune.ml} . lib services))))
+   (run ocaml %{dep:../tools/gen_dune.ml} . lib services))))
 
 (rule
  (target

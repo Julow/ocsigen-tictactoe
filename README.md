@@ -23,21 +23,21 @@ of the Ocsigen configuration are removed as they were premature.
 
 Project structure:
 
-- blibli.eliom
+- src/blibli.eliom
   This is the entry point module defining the various services.
   Dependency between services is done using dependency-injection, this allows
   to define each service in a different module.
 
-- services/
+- src/services/
   This library contains the web services.
 
-- lib/
+- src/lib/
   This library contains modules shared between the client and the server.
 
 - blibli.debug.conf
   The ocsigen configuration used when running the app locally.
 
-- static/
+- src/static/
   Statically served files. They will be copied into the `var/www` directory.
 
 - dune
