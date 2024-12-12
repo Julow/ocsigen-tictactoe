@@ -14,14 +14,15 @@ end)
    blinking when changing page in iOS). *)
 let%client _ = Eliom_client.persist_document_head ()
 
-let main_service =
-  Eliom_service.create ~path:(Eliom_service.Path [])
-    ~meth:(Eliom_service.Get Eliom_parameter.unit) ()
+let create_service ~path ~meth run =
+  let service = Eliom_service.create ~path ~meth () in
+  App.register ~service run;
+  service
 
 let game_service =
-  Eliom_service.create ~path:(Eliom_service.Path [])
+  create_service ~path:(Eliom_service.Path [])
     ~meth:(Eliom_service.Get Eliom_parameter.(suffix (string "room_name")))
-    ()
+    Game.run
 
 let newgame_service =
   Eliom_registration.Redirection.create ~options:`TemporaryRedirect
@@ -29,10 +30,10 @@ let newgame_service =
     ~meth:(Eliom_service.Get Eliom_parameter.unit)
     (Newgame.redirect ~game_service)
 
-let () =
-  App.register ~service:main_service (Main.run ~newgame_service);
-  App.register ~service:game_service Game.run;
-  ()
+let _main_service =
+  create_service ~path:(Eliom_service.Path [])
+    ~meth:(Eliom_service.Get Eliom_parameter.unit)
+    (Main.run ~newgame_service)
 
 let _ =
   Ocsigen_server.start
