@@ -8,7 +8,7 @@ let handle_file_client nm =
       "(rule (target %s.ml) (deps %s)\n\
       \  (action\n\
       \    (with-stdout-to %%{target}\n\
-      \      (chdir .. (run tools/eliom_ppx_client.exe --as-pp -server-cmo \
+      \      (chdir .. (run ../tools/eliom_ppx_client.exe --as-pp -server-cmo \
        %%{cmo:%s} --impl %%{deps})))))\n"
       target dep
       (Filename.chop_extension dep)
@@ -18,7 +18,7 @@ let handle_file_client nm =
       "(rule (target %s.mli) (deps %s)\n\
       \  (action\n\
       \    (with-stdout-to %%{target}\n\
-      \      (chdir .. (run tools/eliom_ppx_client.exe --as-pp --intf \
+      \      (chdir .. (run ../tools/eliom_ppx_client.exe --as-pp --intf \
        %%{deps})))))\n"
       target dep
 

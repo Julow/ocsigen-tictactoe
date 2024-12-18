@@ -1,59 +1,3 @@
-(dirs tools client services lib static static/css)
-
-(executable
- (public_name blibli)
- (name blibli)
- (modes
-  exe
-  (byte plugin)
-  (native plugin))
- (libraries
-  eliom.server
-  ocsipersist-sqlite
-  lib
-  services
-  ocsigenserver
-  ocsigenserver.ext.staticmod
-  ocsigenserver.ext.cors
-  ocsigenserver.ext.accesscontrol)
- (embed_in_plugin_libraries lib services)
- (preprocess
-  (pps
-   lwt_ppx
-   js_of_ocaml-ppx_deriving_json
-   ocsigen-ppx-rpc
-   --rpc-raw
-   eliom.ppx.server)))
-
-(rule
- (alias blibli)
- (deps
-  blibli.cma
-  client/blibli.bc
-  client/blibli.bc.js
-  tools/check_modules.ml
-  dist)
- (action
-  (run ocaml tools/check_modules.ml blibli)))
-
-(env
- (_
-  (flags
-   (:standard -w -9-37-39))))
-
-; Generate the Dune rules for copying the client modules.
-; Defined here to avoid a dependency cycle with the (dynamic_include) stanza.
-
-(rule
- (deps
-  (glob_files *.eliom)
-  (source_tree lib)
-  (source_tree services))
- (action
-  (with-stdout-to
-   dune.client
-   (run ocaml %{dep:tools/gen_dune.ml} . lib services))))
-
 (rule
  (target
   (dir dist))
@@ -61,26 +5,7 @@
   (progn
    (bash
     "mkdir -p dist/{lib/blibli,var/{{log,data,www}/blibli,www/blibli/css,run}}")
-   (bash "cp %{dep:client/blibli.bc.js} dist/var/www/blibli/blibli.js")
+   (bash "cp %{dep:src/client/blibli.bc.js} dist/var/www/blibli/blibli.js")
    (bash
     "cp %{dep:static/css/blibli.css} dist/var/www/blibli/css/blibli.css"))))
 
-(subdir
- client
- (executable
-  (name blibli)
-  (modes js byte)
-  (preprocess
-   (pps js_of_ocaml-ppx lwt_ppx))
-  (js_of_ocaml
-   (build_runtime_flags :standard --enable use-js-string)
-   (flags
-    :standard
-    --enable
-    with-js-error
-    --enable
-    use-js-string
-    --no-source-map))
-  ; source maps are slow...
-  (libraries eliom.client))
- (dynamic_include ../dune.client))
