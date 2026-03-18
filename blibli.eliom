@@ -55,5 +55,6 @@ let _ =
                 "x-eliom-set-cookie-substitutes";
               ]
             ();
+          Deflatemod.run ~mode:(`All_but []) ();
         ];
     ]
