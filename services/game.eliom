@@ -98,7 +98,7 @@ let%client update_grid grid_elts grid =
   done
 
 (* Start the game as a player. *)
-let%client player ~state ~grid ~server_events ~player_bus ~current_player
+let%client player ~state ~grid ~server_channel ~player_bus ~current_player
     ~grid_elts ~status_elt ~rematch_button =
   let state = ref state and grid = ref grid in
 
@@ -159,20 +159,21 @@ let%client player ~state ~grid ~server_events ~player_bus ~current_player
           Eliom_bus.write player_bus Game_state.Rematch));
 
   (* Listen to server events. *)
-  Lwt.async (fun () ->
-      Lwt_stream.iter
-        (function
-          | Game_state.State_changed (s, g) ->
-              grid := g;
-              state := s;
-              update_grid grid_elts g;
-              update_status s)
-        server_events);
+  let _ =
+    Eliom_comet.Channel.register server_channel (function
+      | Some (Game_state.State_changed (s, g)) ->
+          grid := g;
+          state := s;
+          update_grid grid_elts g;
+          update_status s;
+          Lwt.return_unit
+      | None -> Lwt.return_unit)
+  in
   Lwt.return_unit
 
 (* View an in progress game without interacting. Returns when clicking the play
    button. *)
-let%client spectator ~room_name ~state ~grid ~server_events ~grid_elts
+let%client spectator ~room_name ~state ~grid ~server_channel ~grid_elts
     ~status_elt ~play_button =
   let update_status state =
     let play_btn_disabled =
@@ -212,30 +213,28 @@ let%client spectator ~room_name ~state ~grid ~server_events ~grid_elts
   update_status state;
   update_grid grid_elts grid;
 
-  (* Normally do not terminate but we need a return value compatible with
-     [return_p]. *)
+  let server_event_handler_id =
+    Eliom_comet.Channel.register server_channel (function
+      | Some (Game_state.State_changed (s, g)) ->
+          update_grid grid_elts g;
+          update_status s;
+          Lwt.return_unit
+      | None -> Lwt.return_unit)
+  in
+
   let listeners =
-    let+ () =
-      Lwt.pick
-        [
-          (* Listen to clicks on the play button. *)
-          Lwt_js_events.clicks play_button (fun _ _ -> try_enter_game ());
-          (* Listen to server events. *)
-          Lwt_stream.iter
-            (function
-              | Game_state.State_changed (s, g) ->
-                  update_grid grid_elts g;
-                  update_status s)
-            server_events;
-        ]
-    in
+    (* Listen to clicks on the play button. *)
+    let+ () = Lwt_js_events.clicks play_button (fun _ _ -> try_enter_game ()) in
     `Exit
   in
-  (* Cancel the listeners when returning. *)
-  Lwt.pick [ return_p; listeners ]
+  (* Cancel the clicks listener when returning. *)
+  let+ r = Lwt.pick [ return_p; listeners ] in
+  (* Avoid updating the UI when the spectator mode exits. *)
+  Eliom_comet.Channel.unregister server_channel server_event_handler_id;
+  r
 
 (* Main client code. *)
-let%client client room_name state grid server_events grid_elts status_elt
+let%client client room_name state grid server_channel grid_elts status_elt
     play_button rematch_button player_state =
   let status_elt = To_dom.of_span status_elt in
   let play_button = To_dom.of_button play_button in
@@ -251,7 +250,7 @@ let%client client room_name state grid server_events grid_elts status_elt
   rematch_button##.disabled := Js.bool true;
 
   let play ~current_player ~player_bus =
-    player ~state ~grid ~server_events ~player_bus ~current_player ~grid_elts
+    player ~state ~grid ~server_channel ~player_bus ~current_player ~grid_elts
       ~status_elt ~rematch_button
   in
 
@@ -262,7 +261,7 @@ let%client client room_name state grid server_events grid_elts status_elt
   | None -> (
       (* Enter spectator mode until the play button is clicked. *)
       let* r =
-        spectator ~room_name ~state ~grid ~server_events ~grid_elts ~status_elt
+        spectator ~room_name ~state ~grid ~server_channel ~grid_elts ~status_elt
           ~play_button
       in
       match r with
