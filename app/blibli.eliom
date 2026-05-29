@@ -1,6 +1,3 @@
-module%shared _ = Main
-module%shared _ = Game
-
 let%server application_name = "blibli"
 let%client application_name = Eliom_client.get_application_name ()
 

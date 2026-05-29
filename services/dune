@@ -1,13 +1,70 @@
+;
+; This Dune file was generated with ocsigen-dune-rules.
+; To update it, modify the invocation below and run
+;
+;     dune runtest --auto-promote
+;
+
+(rule
+ (with-stdout-to
+  dune.corrected
+  (run
+   ocsigen-dune-rules
+   gen-library
+   services
+   --package
+   blibli
+   --server-libraries
+   ocsipersist-sqlite
+   --eliom-libraries
+   blibli.lib
+   --server-preprocess
+   lwt_ppx,js_of_ocaml-ppx_deriving_json)))
+
+;
+; Below this line, any changes will be overwritten.
+;
+
+(rule
+ (alias runtest)
+ (action
+  (diff dune dune.corrected)))
+
 (library
+ (public_name blibli.services.server)
  (name services)
  (modes byte native)
- ; Disable wrapping so client and server modules have the same name.
  (wrapped false)
- (libraries lib eliom.server ocsipersist-sqlite)
+ (library_flags
+  (:standard -linkall))
  (preprocess
   (pps
-   lwt_ppx
-   js_of_ocaml-ppx_deriving_json
+   eliom.ppx.server
    ocsigen-ppx-rpc
    --rpc-raw
-   eliom.ppx.server)))
+   lwt_ppx
+   js_of_ocaml-ppx_deriving_json))
+ (libraries eliom.server ocsipersist-sqlite blibli.lib.server))
+
+(subdir
+ client
+ (library
+  (public_name blibli.services.client)
+  (name services)
+  (modes byte)
+  (wrapped false)
+  (library_flags
+   (:standard -linkall))
+  (preprocess
+   (pps js_of_ocaml-ppx))
+  (libraries eliom.client js_of_ocaml js_of_ocaml-lwt blibli.lib.client))
+ (dynamic_include ../dune.client))
+
+(rule
+ (deps
+  (glob_files *.eliom)
+  (glob_files *.eliomi))
+ (action
+  (with-stdout-to
+   dune.client
+   (run ocsigen-dune-rules gen-client-modules .))))
