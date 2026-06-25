@@ -19,18 +19,18 @@ let create_service ~path ~meth run =
 let game_service =
   create_service ~path:(Eliom_service.Path [])
     ~meth:(Eliom_service.Get Eliom_parameter.(suffix (string "room_name")))
-    Game.run
+    Services.Game.run
 
 let newgame_service =
   Eliom_registration.Redirection.create ~options:`TemporaryRedirect
     ~path:(Eliom_service.Path [ "new" ])
     ~meth:(Eliom_service.Get Eliom_parameter.unit)
-    (Newgame.redirect ~game_service)
+    (Services.Newgame.redirect ~game_service)
 
 let _main_service =
   create_service ~path:(Eliom_service.Path [])
     ~meth:(Eliom_service.Get Eliom_parameter.unit)
-    (Main.run ~newgame_service)
+    (Services.Main.run ~newgame_service)
 
 let _ =
   Ocsigen_server.start

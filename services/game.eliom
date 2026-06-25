@@ -2,6 +2,7 @@ open%client Js_of_ocaml
 open%client Js_of_ocaml_lwt
 open%shared Eliom_content.Html
 open%client Lwt.Syntax
+open%shared Lib
 
 open Html_utils
 

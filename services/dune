@@ -12,8 +12,8 @@
    ocsigen-dune-rules
    gen-library
    services
-   --package
-   blibli
+   --public-name
+   blibli.services
    --server-libraries
    ocsipersist-sqlite
    --eliom-libraries
@@ -34,7 +34,7 @@
  (public_name blibli.services.server)
  (name services)
  (modes byte native)
- (wrapped false)
+ (wrapped true)
  (library_flags
   (:standard -linkall))
  (preprocess
@@ -52,7 +52,7 @@
   (public_name blibli.services.client)
   (name services)
   (modes byte)
-  (wrapped false)
+  (wrapped true)
   (library_flags
    (:standard -linkall))
   (preprocess
@@ -67,4 +67,11 @@
  (action
   (with-stdout-to
    dune.client
-   (run ocsigen-dune-rules gen-client-modules .))))
+   (run
+    ocsigen-dune-rules
+    gen-client-modules
+    --internal-prefix
+    services
+    --server-objs-dir
+    ../.services.objs/byte
+    .))))
