@@ -1,5 +1,5 @@
 open Eliom_content.Html
-open Html_utils
+open Lib.Html_utils
 
 let run ~newgame_service () () =
   Lwt.return
