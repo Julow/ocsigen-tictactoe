@@ -6,9 +6,7 @@ let app = Sys.argv.(1)
 
 let modules_from_bytecode_executable nm =
   let ch = Unix.open_process_in (Printf.sprintf "ocamlobjinfo %s" nm) in
-  while input_line ch <> "Imported units:" do
-    ()
-  done;
+  while input_line ch <> "Imported units:" do () done;
   let lst = ref [] in
   (try
      while
@@ -18,9 +16,7 @@ let modules_from_bytecode_executable nm =
          lst := String.sub l (i + 1) (String.length l - i - 1) :: !lst;
          true)
        else false
-     do
-       ()
-     done
+     do () done
    with End_of_file -> ());
   !lst
 

@@ -2,7 +2,6 @@ open%client Js_of_ocaml
 open%client Js_of_ocaml_lwt
 open%shared Eliom_content.Html
 open%client Lwt.Syntax
-
 open Html_utils
 
 let%shared cell_of_player = function
@@ -13,9 +12,9 @@ let%shared other_player = function `P1 -> `P2 | `P2 -> `P1
 
 (** Handle events from the client on the server side.
 
-   The server might decide that the client has done an unlawful move and not
-   register it. In this case, [Game_state.notify] is used to send the correct
-   state back to the client, which might have updated its model of the game. *)
+    The server might decide that the client has done an unlawful move and not
+    register it. In this case, [Game_state.notify] is used to send the correct
+    state back to the client, which might have updated its model of the game. *)
 let handle_client_events state current_player = function
   | Game_state.Click (x, y) -> (
       if
