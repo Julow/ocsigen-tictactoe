@@ -17,13 +17,11 @@ module%shared Grid : sig
   val set : t -> int -> int -> cell -> [ `Winner of cell | `Draw | `Going_on ]
   (** Fill an empty cell of the grid and compute whether the game ends.
 
-      Returns [`Draw] if the game ends in a draw.
-      Returns [`Winner cell] if the game ends with a winner.
-      Returns [`Going_on] if the game is still going.
+      Returns [`Draw] if the game ends in a draw. Returns [`Winner cell] if the
+      game ends with a winner. Returns [`Going_on] if the game is still going.
 
       @raise [Invalid_argument] if the specified cell was not empty.
-      @raise [Not_found].
-  *)
+      @raise [Not_found]. *)
 end = struct
   type cell = X | O [@@deriving json]
   type t = cell option array [@@deriving json]
